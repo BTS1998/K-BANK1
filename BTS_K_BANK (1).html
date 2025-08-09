@@ -1,0 +1,195 @@
+<!DOCTYPE html><html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BTS K-BANK</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f0f2f5;
+      margin: 0;
+      padding: 0;
+    }
+    .navbar {
+      background-color: #1c3faa;
+      color: white;
+      padding: 15px;
+      font-size: 1.5em;
+      text-align: center;
+      font-weight: bold;
+    }
+    .balance-section {
+      background-color: #ffffff;
+      padding: 20px;
+      text-align: center;
+      font-size: 1.4em;
+      font-weight: bold;
+      color: #1c3faa;
+      border-bottom: 2px solid #e0e0e0;
+    }
+    .main-content {
+      padding: 20px;
+      text-align: center;
+    }
+    .main-content button {
+      background-color: #1c3faa;
+      color: white;
+      padding: 15px 30px;
+      font-size: 1.1em;
+      border: none;
+      border-radius: 8px;
+      margin: 10px;
+      cursor: pointer;
+    }
+    .container {
+      background: white;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      padding: 30px;
+      border-radius: 12px;
+      width: 360px;
+      text-align: center;
+      margin: 40px auto;
+      display: none;
+    }
+    .logo {
+      font-size: 1.8em;
+      font-weight: bold;
+      color: #1c3faa;
+      margin-bottom: 20px;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1em;
+    }
+    button.send-btn {
+      background-color: #1c3faa;
+      color: white;
+    }
+    .status {
+      font-size: 1.2em;
+      margin-top: 20px;
+    }
+    .loader {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #1c3faa;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="navbar">BTS K-BANK</div>
+  <div class="balance-section">
+    Account Balance: ₩86,293,500,000<br>
+    계좌 잔액: ₩86,293,500,000
+  </div>
+  <div class="main-content" id="home-section">
+    <button onclick="showSection('form-section')">💸 Local Transfer (국내 송금)</button>
+    <button onclick="showSection('intl-country-section')">🌍 International Transfer (국제 송금)</button>
+  </div>  <!-- Local Transfer Form -->  <div class="container" id="form-section">
+    <div class="logo">Local Transfer</div>
+    <select id="bank">
+      <option value="">은행 선택 (Select Bank)</option>
+      <option>하나은행 (Hana Bank)</option>
+      <option>국민은행 (KB Kookmin Bank)</option>
+      <option>우리은행 (Woori Bank)</option>
+      <option>신한은행 (Shinhan Bank)</option>
+    </select>
+    <input type="text" id="account" placeholder="Account Number">
+    <input type="number" id="amount" placeholder="Amount (₩ KRW)">
+    <button class="send-btn" onclick="startLoading('local')">Send</button>
+  </div>  <!-- International Country Selection -->  <div class="container" id="intl-country-section">
+    <div class="logo">🌍 Choose Country</div>
+    <select id="country" onchange="fillIntlBanks()">
+      <option value="">Select a country</option>
+      <option value="Chile">Chile</option>
+      <option value="USA">USA</option>
+      <option value="Germany">Germany</option>
+      <option value="Denmark">Denmark</option>
+      <option value="Iran">Iran</option>
+      <option value="Afghanistan">Afghanistan</option>
+      <option value="Israel">Israel</option>
+    </select>
+  </div>  <!-- International Transfer Form -->  <div class="container" id="intl-form-section">
+    <div class="logo">International Transfer</div>
+    <select id="intl-bank"></select>
+    <input type="text" id="intl-account" placeholder="Account Number">
+    <input type="number" id="intl-amount" placeholder="Amount (₩ KRW Equivalent)">
+    <button class="send-btn" onclick="startLoading('intl')">Send</button>
+  </div>  <!-- Loading Screen -->  <div class="container" id="loading-section">
+    <div class="logo">BTS K-BANK</div>
+    <div class="loader"></div>
+    <div class="status" id="loading-text">Pending...<br>승인 대기 중입니다...</div>
+  </div>  <!-- Decline Message -->  <div class="container" id="decline-section">
+    <div class="logo">⚠️ Transfer Failed</div>
+    <div class="status">
+      ❌ Transaction Declined<br>
+      거래가 거절되었습니다<br><br>
+      Please report to your bank.<br>
+      은행에 문의하십시오.
+    </div>
+  </div>  <script>
+    var intlBanks = {
+      'Chile': ['Banco de Chile', 'BancoEstado'],
+      'USA': ['Bank of America', 'Chase', 'Wells Fargo'],
+      'Germany': ['Deutsche Bank', 'Commerzbank'],
+      'Denmark': ['Danske Bank', 'Nordea'],
+      'Iran': ['Bank Melli Iran', 'Bank Sepah'],
+      'Afghanistan': ['Azizi Bank', 'Afghanistan International Bank'],
+      'Israel': ['Bank Leumi', 'Bank Hapoalim']
+    };
+
+    function showSection(id) {
+      var sections = ['form-section', 'intl-country-section', 'intl-form-section', 'loading-section', 'decline-section'];
+      for (var i = 0; i < sections.length; i++) {
+        document.getElementById(sections[i]).style.display = 'none';
+      }
+      document.getElementById('home-section').style.display = 'none';
+      document.getElementById(id).style.display = 'block';
+    }
+
+    function fillIntlBanks() {
+      var country = document.getElementById('country').value;
+      var select = document.getElementById('intl-bank');
+      select.innerHTML = '';
+
+      if (intlBanks[country]) {
+        for (var i = 0; i < intlBanks[country].length; i++) {
+          var opt = document.createElement('option');
+          opt.value = intlBanks[country][i];
+          opt.textContent = intlBanks[country][i];
+          select.appendChild(opt);
+        }
+        showSection('intl-form-section');
+      }
+    }
+
+    function startLoading(type) {
+      var valid = true;
+      if (type === 'local') {
+        valid = document.getElementById('bank').value && document.getElementById('account').value && document.getElementById('amount').value;
+      } else {
+        valid = document.getElementById('intl-bank').value && document.getElementById('intl-account').value && document.getElementById('intl-amount').value;
+      }
+      if (!valid) {
+        alert("Please fill in all required fields.");
+        return;
+      }
+      showSection('loading-section');
+      setTimeout(function() {
+        showSection('decline-section');
+      }, 30000);
+    }
+  </script></body>
+</html>
